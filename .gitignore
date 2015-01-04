@@ -1,0 +1,9 @@
+.dub
+docs.json
+__dummy.html
+*.o
+*.obj
+ddmd.lib
+ddmd.a
+copyin.bat
+dub.selections.json
