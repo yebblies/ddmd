@@ -1,0 +1,20 @@
+{
+    "name": "ddmd",
+    "description": "DMD Compiler Frontend",
+    "copyright": "Copyright © 1999-2015, Digital Mars",
+    "authors": ["Walter Bright"],
+    "license": "BSL-1.0",
+    "configurations": [
+        {
+            "name": "libddmd",
+            "targetName": "ddmd",
+            "targetType": "library",
+            "sourcePaths": ["source/"],
+            "importPaths": ["source/"]
+        }
+    ],
+    "buildRequirements" : [
+        "silenceWarnings",
+        "silenceDeprecations"
+    ]
+}
