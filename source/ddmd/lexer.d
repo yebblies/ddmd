@@ -2431,7 +2431,7 @@ public:
      * Returns:
      *      0       invalid
      */
-    final static int isValidIdentifier(const(char)* p)
+    final static bool isValidIdentifier(const(char)* p)
     {
         size_t len;
         size_t idx;
@@ -2450,9 +2450,9 @@ public:
             if (!((dc >= 0x80 && isUniAlpha(dc)) || isalnum(dc) || dc == '_'))
                 goto Linvalid;
         }
-        return 1;
+        return true;
     Linvalid:
-        return 0;
+        return false;
     }
 
     /********************************************

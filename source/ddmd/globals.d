@@ -306,7 +306,7 @@ alias d_uns8 d_char;
 alias d_uns16 d_wchar;
 alias d_uns32 d_dchar;
 alias real real_t;
-//typedef unsigned Loc;         // file location
+// file location
 struct Loc
 {
     const(char)* filename;

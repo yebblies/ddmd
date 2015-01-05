@@ -25,7 +25,7 @@ extern(C++) static uint32_t calcHash(const(char)* key, size_t len)
     const(uint32_t) m = 0x5bd1e995;
     const(int) r = 24;
     // Initialize the hash to a 'random' value
-    uint32_t h = len;
+    uint32_t h = cast(uint32_t)len;
     // Mix 4 bytes at a time into the hash
     const(uint8_t)* data = cast(const(uint8_t)*)key;
     while (len >= 4)
@@ -186,7 +186,7 @@ private:
         sv.length = length;
         .memcpy(cast(char*)sv.lstring, s, length);
         (cast(char*)sv.lstring)[length] = 0;
-        const(uint32_t) vptr = npools << POOL_BITS | nfill;
+        const(uint32_t) vptr = cast(uint32_t)(npools << POOL_BITS | nfill);
         nfill += nbytes + (-nbytes & 7); // align to 8 bytes
         return vptr;
     }
