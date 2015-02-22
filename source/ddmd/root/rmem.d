@@ -18,48 +18,16 @@ import core.memory : GC;
 extern(C++)
 struct Mem
 {
-    char* strdup(const char* p)
+    char* xstrdup(const char* p)
     {
         return p[0..strlen(p)+1].dup.ptr;
     }
-    void free(void* p) {}
-    void* malloc(size_t n) { return GC.malloc(n); }
-    void* calloc(size_t size, size_t n) { return GC.calloc(size * n); }
-    void* realloc(void* p, size_t size) { return GC.realloc(p, size); }
+    void xfree(void* p) {}
+    void* xmalloc(size_t n) { return GC.malloc(n); }
+    void* xcalloc(size_t size, size_t n) { return GC.calloc(size * n); }
+    void* xrealloc(void* p, size_t size) { return GC.realloc(p, size); }
 }
 extern(C++) __gshared Mem mem;
-
-version(Windows)
-{
-    extern(C++)
-    pragma(mangle, "??2@YAPAXI@Z")
-    void* operator_new(size_t n)
-    {
-        return GC.malloc(n);
-    }
-
-    extern(C++)
-    pragma(mangle, "??3@YAPAXI@Z")
-    void operator_delete(void* p)
-    {
-    }
-    extern(C++)
-    pragma(mangle, "??_P@YAPAXI@Z")
-    void* operator_new_array(size_t n)
-    {
-        return GC.malloc(n);
-    }
-
-    extern(C++)
-    pragma(mangle, "??_Q@YAXPAX@Z")
-    void operator_delete_array(void* p)
-    {
-    }
-}
-else
-{
-    static assert(0);
-}
 
 }
 else
@@ -71,7 +39,7 @@ import core.stdc.stdio;
 extern(C++)
 struct Mem
 {
-    char* strdup(const char* s)
+    char* xstrdup(const char* s)
     {
         if (s)
         {
@@ -82,12 +50,12 @@ struct Mem
         }
         return null;
     }
-    void free(void* p)
+    void xfree(void* p)
     {
         if (p)
             .free(p);
     }
-    void* malloc(size_t size)
+    void* xmalloc(size_t size)
     {
         if (!size)
             return null;
@@ -97,7 +65,7 @@ struct Mem
             error();
         return p;
     }
-    void* calloc(size_t size, size_t n)
+    void* xcalloc(size_t size, size_t n)
     {
         if (!size || !n)
             return null;
@@ -107,7 +75,7 @@ struct Mem
             error();
         return p;
     }
-    void* realloc(void* p, size_t size)
+    void* xrealloc(void* p, size_t size)
     {
         if (!size)
         {

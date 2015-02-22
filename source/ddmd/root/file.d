@@ -47,7 +47,7 @@ struct File
         if (buffer)
         {
             if (_ref == 0)
-                mem.free(buffer);
+                mem.xfree(buffer);
             version(Windows)
             {
                 if (_ref == 2)

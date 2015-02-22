@@ -238,6 +238,7 @@ struct Id
     extern(C++) static __gshared Identifier entrypoint;
     extern(C++) static __gshared Identifier va_argsave_t;
     extern(C++) static __gshared Identifier va_argsave;
+    extern(C++) static __gshared Identifier va_start;
     extern(C++) static __gshared Identifier std;
     extern(C++) static __gshared Identifier core;
     extern(C++) static __gshared Identifier math;
@@ -531,6 +532,7 @@ struct Id
         entrypoint = Identifier.idPool("__entrypoint");
         va_argsave_t = Identifier.idPool("__va_argsave_t");
         va_argsave = Identifier.idPool("__va_argsave");
+        va_start = Identifier.idPool("va_start");
         std = Identifier.idPool("std");
         core = Identifier.idPool("core");
         math = Identifier.idPool("math");

@@ -10,7 +10,7 @@
 module ddmd.tokens;
 
 import core.stdc.ctype, core.stdc.stdio, core.stdc.string;
-import ddmd.globals, ddmd.id, ddmd.identifier, ddmd.longdouble, ddmd.root.outbuffer, ddmd.root.rmem, ddmd.utf;
+import ddmd.globals, ddmd.id, ddmd.identifier, ddmd.root.longdouble, ddmd.root.outbuffer, ddmd.root.rmem, ddmd.utf;
 
 enum TOK : int
 {

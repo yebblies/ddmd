@@ -26,7 +26,7 @@ struct FileName
     /****************************** FileName ********************************/
     extern(D) this(const(char)* str)
     {
-        this.str = mem.strdup(str);
+        this.str = mem.xstrdup(str);
     }
 
     extern(C++) bool equals(RootObject obj)
@@ -34,7 +34,7 @@ struct FileName
         return compare(obj) == 0;
     }
 
-    extern(C++) static int equals(const(char)* name1, const(char)* name2)
+    extern(C++) static bool equals(const(char)* name1, const(char)* name2)
     {
         return compare(name1, name2) == 0;
     }
@@ -59,7 +59,7 @@ struct FileName
     /************************************
      * Return !=0 if absolute path name.
      */
-    extern(C++) static int absolute(const(char)* name)
+    extern(C++) static bool absolute(const(char)* name)
     {
         version(Windows)
         {
@@ -118,7 +118,7 @@ struct FileName
     }
 
     /********************************
-     * Return mem.malloc'd filename with extension removed.
+     * Return mem.xmalloc'd filename with extension removed.
      */
     extern(C++) static const(char)* removeExt(const(char)* str)
     {
@@ -126,12 +126,12 @@ struct FileName
         if (e)
         {
             size_t len = (e - str) - 1;
-            char* n = cast(char*)mem.malloc(len + 1);
+            char* n = cast(char*)mem.xmalloc(len + 1);
             memcpy(n, str, len);
             n[len] = 0;
             return n;
         }
-        return mem.strdup(str);
+        return mem.xstrdup(str);
     }
 
     /********************************
@@ -205,7 +205,7 @@ struct FileName
             }
         }
         pathlen = n - str;
-        char* path = cast(char*)mem.malloc(pathlen + 1);
+        char* path = cast(char*)mem.xmalloc(pathlen + 1);
         memcpy(path, str, pathlen);
         path[pathlen] = 0;
         return path;
@@ -225,7 +225,7 @@ struct FileName
             return name;
         pathlen = n - path;
         namelen = strlen(name);
-        char* f = cast(char*)mem.malloc(pathlen + 1 + namelen + 1);
+        char* f = cast(char*)mem.xmalloc(pathlen + 1 + namelen + 1);
         memcpy(f, path, pathlen);
         version(Posix)
         {
@@ -260,7 +260,7 @@ struct FileName
             return cast(char*)name;
         pathlen = strlen(path);
         namelen = strlen(name);
-        f = cast(char*)mem.malloc(pathlen + 1 + namelen + 1);
+        f = cast(char*)mem.xmalloc(pathlen + 1 + namelen + 1);
         memcpy(f, path, pathlen);
         version(Posix)
         {
@@ -380,10 +380,10 @@ struct FileName
     {
         const(char)* e = FileName.ext(name);
         if (e) // if already has an extension
-            return mem.strdup(name);
+            return mem.xstrdup(name);
         size_t len = strlen(name);
         size_t extlen = strlen(ext);
-        char* s = cast(char*)mem.malloc(len + 1 + extlen + 1);
+        char* s = cast(char*)mem.xmalloc(len + 1 + extlen + 1);
         memcpy(s, name, len);
         s[len] = '.';
         memcpy(s + len + 1, ext, extlen + 1);
@@ -400,7 +400,7 @@ struct FileName
         {
             size_t len = e - name;
             size_t extlen = strlen(ext);
-            char* s = cast(char*)mem.malloc(len + extlen + 1);
+            char* s = cast(char*)mem.xmalloc(len + extlen + 1);
             memcpy(s, name, len);
             memcpy(s + len, ext, extlen + 1);
             return s;
@@ -409,20 +409,20 @@ struct FileName
             return defaultExt(name, ext); // doesn't have one
     }
 
-    extern(C++) static int equalsExt(const(char)* name, const(char)* ext)
+    extern(C++) static bool equalsExt(const(char)* name, const(char)* ext)
     {
         const(char)* e = FileName.ext(name);
         if (!e && !ext)
-            return 1;
+            return true;
         if (!e || !ext)
-            return 0;
+            return false;
         return FileName.compare(e, ext) == 0;
     }
 
     /******************************
      * Return !=0 if extensions match.
      */
-    extern(C++) int equalsExt(const(char)* ext)
+    extern(C++) bool equalsExt(const(char)* ext)
     {
         return equalsExt(str, ext);
     }
@@ -430,9 +430,9 @@ struct FileName
     /*************************************
      * Search Path for file.
      * Input:
-     *      cwd     if !=0, search current directory before searching path
+     *      cwd     if true, search current directory before searching path
      */
-    extern(C++) static const(char)* searchPath(Strings* path, const(char)* name, int cwd)
+    extern(C++) static const(char)* searchPath(Strings* path, const(char)* name, bool cwd)
     {
         if (absolute(name))
         {
@@ -466,7 +466,7 @@ struct FileName
      *      https://www.securecoding.cert.org/confluence/display/seccode/FIO02-C.+Canonicalize+path+names+originating+from+untrusted+sources
      * Returns:
      *      NULL    file not found
-     *      !=NULL  mem.malloc'd file name
+     *      !=NULL  mem.xmalloc'd file name
      */
     extern(C++) static const(char)* safeSearchPath(Strings* path, const(char)* name)
     {
@@ -482,7 +482,7 @@ struct FileName
                     return null;
                 }
             }
-            return FileName.searchPath(path, name, 0);
+            return FileName.searchPath(path, name, false);
         }
         else version(Posix)
         {
@@ -520,7 +520,7 @@ struct FileName
                     if (exists(cname) && strncmp(cpath, cname, strlen(cpath)) == 0)
                     {
                         .free(cast(void*)cpath);
-                        const(char)* p = mem.strdup(cname);
+                        const(char)* p = mem.xstrdup(cname);
                         .free(cast(void*)cname);
                         return p;
                     }
@@ -569,7 +569,7 @@ struct FileName
         }
     }
 
-    extern(C++) static int ensurePathExists(const(char)* path)
+    extern(C++) static bool ensurePathExists(const(char)* path)
     {
         //printf("FileName::ensurePathExists(%s)\n", path ? path : "");
         if (path && *path)
@@ -584,12 +584,12 @@ struct FileName
                         size_t len = strlen(path);
                         if ((len > 2 && p[-1] == ':' && strcmp(path + 2, p) == 0) || len == strlen(p))
                         {
-                            mem.free(cast(void*)p);
+                            mem.xfree(cast(void*)p);
                             return 0;
                         }
                     }
-                    int r = ensurePathExists(p);
-                    mem.free(cast(void*)p);
+                    bool r = ensurePathExists(p);
+                    mem.xfree(cast(void*)p);
                     if (r)
                         return r;
                 }
@@ -618,12 +618,12 @@ struct FileName
                          * this directory
                          */
                         if (errno != EEXIST)
-                            return 1;
+                            return true;
                     }
                 }
             }
         }
-        return 0;
+        return false;
     }
 
     /******************************************
@@ -670,10 +670,10 @@ struct FileName
     {
         if (str)
         {
-            assert(str[0] != 0xAB);
+            assert(str[0] != cast(char)0xAB);
             memset(cast(void*)str, 0xAB, strlen(str) + 1); // stomp
         }
-        mem.free(cast(void*)str);
+        mem.xfree(cast(void*)str);
     }
 
     extern(C++) char* toChars()

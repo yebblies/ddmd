@@ -118,7 +118,7 @@ extern(C++) void resetConsoleColor()
 extern(C++) void error(Loc loc, const(char)* format, ...)
 {
     va_list ap;
-    version(X86_64) va_start(ap, __va_argsave); else va_start(ap, format);
+    va_start(ap, format);
     verror(loc, format, ap);
     va_end(ap);
 }
@@ -130,35 +130,47 @@ extern(C++) void error(const(char)* filename, uint linnum, uint charnum, const(c
     loc.linnum = linnum;
     loc.charnum = charnum;
     va_list ap;
-    version(X86_64) va_start(ap, __va_argsave); else va_start(ap, format);
+    va_start(ap, format);
     verror(loc, format, ap);
+    va_end(ap);
+}
+
+extern(C++) void errorSupplemental(Loc loc, const(char)* format, ...)
+{
+    va_list ap;
+    va_start(ap, format);
+    verrorSupplemental(loc, format, ap);
     va_end(ap);
 }
 
 extern(C++) void warning(Loc loc, const(char)* format, ...)
 {
     va_list ap;
-    version(X86_64) va_start(ap, __va_argsave); else va_start(ap, format);
+    va_start(ap, format);
     vwarning(loc, format, ap);
     va_end(ap);
 }
 
-/**************************************
- * Print supplementary message about the last error
- * Used for backtraces, etc
- */
-extern(C++) void errorSupplemental(Loc loc, const(char)* format, ...)
+extern(C++) void warningSupplemental(Loc loc, const(char)* format, ...)
 {
     va_list ap;
-    version(X86_64) va_start(ap, __va_argsave); else va_start(ap, format);
-    verrorSupplemental(loc, format, ap);
+    va_start(ap, format);
+    vwarningSupplemental(loc, format, ap);
     va_end(ap);
 }
 
 extern(C++) void deprecation(Loc loc, const(char)* format, ...)
 {
     va_list ap;
-    version(X86_64) va_start(ap, __va_argsave); else va_start(ap, format);
+    va_start(ap, format);
+    vdeprecation(loc, format, ap);
+    va_end(ap);
+}
+
+extern(C++) void deprecationSupplemental(Loc loc, const(char)* format, ...)
+{
+    va_list ap;
+    va_start(ap, format);
     vdeprecation(loc, format, ap);
     va_end(ap);
 }
@@ -171,7 +183,7 @@ extern(C++) void verrorPrint(Loc loc, COLOR headerColor, const(char)* header, co
         setConsoleColorBright(true);
     if (*p)
         fprintf(stderr, "%s: ", p);
-    mem.free(p);
+    mem.xfree(p);
     if (global.params.color)
         setConsoleColor(headerColor, true);
     fputs(header, stderr);
@@ -223,6 +235,12 @@ extern(C++) void vwarning(Loc loc, const(char)* format, va_list ap)
     }
 }
 
+extern(C++) void vwarningSupplemental(Loc loc, const(char)* format, va_list ap)
+{
+    if (global.params.warnings && !global.gag)
+        verrorPrint(loc, COLOR_YELLOW, "       ", format, ap);
+}
+
 extern(C++) void vdeprecation(Loc loc, const(char)* format, va_list ap, const(char)* p1 = null, const(char)* p2 = null)
 {
     static __gshared const(char)* header = "Deprecation: ";
@@ -230,6 +248,14 @@ extern(C++) void vdeprecation(Loc loc, const(char)* format, va_list ap, const(ch
         verror(loc, format, ap, p1, p2, header);
     else if (global.params.useDeprecated == 2 && !global.gag)
         verrorPrint(loc, COLOR_BLUE, header, format, ap, p1, p2);
+}
+
+extern(C++) void vdeprecationSupplemental(Loc loc, const(char)* format, va_list ap)
+{
+    if (global.params.useDeprecated == 0)
+        verrorSupplemental(loc, format, ap);
+    else if (global.params.useDeprecated == 2 && !global.gag)
+        verrorPrint(loc, COLOR_BLUE, "       ", format, ap);
 }
 
 /***************************************

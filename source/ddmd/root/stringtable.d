@@ -76,14 +76,17 @@ struct StringEntry
     uint32_t vptr;
 }
 
-// StringValue is a variable-length structure as indicated by the last array
-// member with unspecified size.  It has neither proper c'tors nor a factory
-// method because the only thing which should be creating these is StringTable.
+// StringValue is a variable-length structure. It has neither proper c'tors nor a
+// factory method because the only thing which should be creating these is StringTable.
 struct StringValue
 {
     void* ptrvalue;
     size_t length;
-    char[0] lstring;
+    extern(C++) char* lstring()
+    {
+        return cast(char*)(&this + 1);
+    }
+
     extern(C++) const(size_t) len()
     {
         return length;
@@ -91,7 +94,7 @@ struct StringValue
 
     extern(C++) const(const(char)*) toDchars()
     {
-        return cast(char*)lstring;
+        return cast(char*)(&this + 1);
     }
 
 }
@@ -111,19 +114,30 @@ public:
         size = nextpow2(cast(size_t)(size / loadFactor));
         if (size < 32)
             size = 32;
-        table = cast(StringEntry*)mem.calloc(size, (table[0]).sizeof);
+        table = cast(StringEntry*)mem.xcalloc(size, (table[0]).sizeof);
         tabledim = size;
         pools = null;
         npools = nfill = 0;
         count = 0;
     }
 
+    extern(C++) void reset(size_t size = 0)
+    {
+        for (size_t i = 0; i < npools; ++i)
+            mem.xfree(pools[i]);
+        mem.xfree(table);
+        mem.xfree(pools);
+        table = null;
+        pools = null;
+        _init(size);
+    }
+
     extern(C++) ~this()
     {
         for (size_t i = 0; i < npools; ++i)
-            mem.free(pools[i]);
-        mem.free(table);
-        mem.free(pools);
+            mem.xfree(pools[i]);
+        mem.xfree(table);
+        mem.xfree(pools);
         table = null;
         pools = null;
     }
@@ -177,15 +191,15 @@ private:
         const(size_t) nbytes = (StringValue).sizeof + length + 1;
         if (!npools || nfill + nbytes > POOL_SIZE)
         {
-            pools = cast(uint8_t**)mem.realloc(pools, ++npools * (pools[0]).sizeof);
-            pools[npools - 1] = cast(uint8_t*)mem.malloc(nbytes > POOL_SIZE ? nbytes : POOL_SIZE);
+            pools = cast(uint8_t**)mem.xrealloc(pools, ++npools * (pools[0]).sizeof);
+            pools[npools - 1] = cast(uint8_t*)mem.xmalloc(nbytes > POOL_SIZE ? nbytes : POOL_SIZE);
             nfill = 0;
         }
         StringValue* sv = cast(StringValue*)&pools[npools - 1][nfill];
         sv.ptrvalue = null;
         sv.length = length;
-        .memcpy(cast(char*)sv.lstring, s, length);
-        (cast(char*)sv.lstring)[length] = 0;
+        .memcpy(sv.lstring(), s, length);
+        sv.lstring()[length] = 0;
         const(uint32_t) vptr = cast(uint32_t)(npools << POOL_BITS | nfill);
         nfill += nbytes + (-nbytes & 7); // align to 8 bytes
         return vptr;
@@ -208,7 +222,7 @@ private:
         j = 1;; ++j)
         {
             StringValue* sv;
-            if (!table[i].vptr || table[i].hash == hash && (sv = getValue(table[i].vptr)).length == length && .memcmp(s, cast(char*)sv.lstring, length) == 0)
+            if (!table[i].vptr || table[i].hash == hash && (sv = getValue(table[i].vptr)).length == length && .memcmp(s, sv.lstring(), length) == 0)
                 return i;
             i = (i + j) & (tabledim - 1);
         }
@@ -219,16 +233,16 @@ private:
         const(size_t) odim = tabledim;
         StringEntry* otab = table;
         tabledim *= 2;
-        table = cast(StringEntry*)mem.calloc(tabledim, (table[0]).sizeof);
+        table = cast(StringEntry*)mem.xcalloc(tabledim, (table[0]).sizeof);
         for (size_t i = 0; i < odim; ++i)
         {
             StringEntry* se = &otab[i];
             if (!se.vptr)
                 continue;
             StringValue* sv = getValue(se.vptr);
-            table[findSlot(se.hash, cast(char*)sv.lstring, sv.length)] = *se;
+            table[findSlot(se.hash, sv.lstring(), sv.length)] = *se;
         }
-        mem.free(otab);
+        mem.xfree(otab);
     }
 
 }

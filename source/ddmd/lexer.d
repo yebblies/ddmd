@@ -10,7 +10,7 @@
 module ddmd.lexer;
 
 import core.stdc.ctype, core.stdc.errno, core.stdc.stdarg, core.stdc.stdio, core.stdc.string, core.stdc.time;
-import ddmd.entity, ddmd.errors, ddmd.globals, ddmd.id, ddmd.identifier, ddmd.longdouble, ddmd.root.outbuffer, ddmd.root.port, ddmd.root.rmem, ddmd.root.stringtable, ddmd.tokens, ddmd.utf;
+import ddmd.entity, ddmd.errors, ddmd.globals, ddmd.id, ddmd.identifier, ddmd.root.longdouble, ddmd.root.outbuffer, ddmd.root.port, ddmd.root.rmem, ddmd.root.stringtable, ddmd.tokens, ddmd.utf;
 
 enum LS = 0x2028;
 // UTF line separator
@@ -147,12 +147,6 @@ public:
             unittest_lexer();
         }
     }
-
-    final static Identifier idPool(const(char)* s);
-
-    final static Identifier uniqueId(const(char)* s);
-
-    final static Identifier uniqueId(const(char)* s, int num);
 
     final TOK nextToken()
     {
@@ -1192,7 +1186,7 @@ public:
                 {
                     t.len = cast(uint)stringbuffer.offset;
                     stringbuffer.writeByte(0);
-                    t.ustring = cast(char*)mem.malloc(stringbuffer.offset);
+                    t.ustring = cast(char*)mem.xmalloc(stringbuffer.offset);
                     memcpy(t.ustring, stringbuffer.data, stringbuffer.offset);
                     stringPostfix(t);
                     return TOKstring;
@@ -1261,7 +1255,7 @@ public:
                 }
                 t.len = cast(uint)stringbuffer.offset;
                 stringbuffer.writeByte(0);
-                t.ustring = cast(char*)mem.malloc(stringbuffer.offset);
+                t.ustring = cast(char*)mem.xmalloc(stringbuffer.offset);
                 memcpy(t.ustring, stringbuffer.data, stringbuffer.offset);
                 stringPostfix(t);
                 return TOKxstring;
@@ -1455,7 +1449,7 @@ public:
             error("delimited string must end in %c\"", delimright);
         t.len = cast(uint)stringbuffer.offset;
         stringbuffer.writeByte(0);
-        t.ustring = cast(char*)mem.malloc(stringbuffer.offset);
+        t.ustring = cast(char*)mem.xmalloc(stringbuffer.offset);
         memcpy(t.ustring, stringbuffer.data, stringbuffer.offset);
         stringPostfix(t);
         return TOKstring;
@@ -1487,7 +1481,7 @@ public:
                 if (--nest == 0)
                 {
                     t.len = cast(uint)(p - 1 - pstart);
-                    t.ustring = cast(char*)mem.malloc(t.len + 1);
+                    t.ustring = cast(char*)mem.xmalloc(t.len + 1);
                     memcpy(t.ustring, pstart, t.len);
                     t.ustring[t.len] = 0;
                     stringPostfix(t);
@@ -1546,7 +1540,7 @@ public:
             case '"':
                 t.len = cast(uint)stringbuffer.offset;
                 stringbuffer.writeByte(0);
-                t.ustring = cast(char*)mem.malloc(stringbuffer.offset);
+                t.ustring = cast(char*)mem.xmalloc(stringbuffer.offset);
                 memcpy(t.ustring, stringbuffer.data, stringbuffer.offset);
                 stringPostfix(t);
                 return TOKstring;
@@ -2130,7 +2124,7 @@ public:
     final void error(const(char)* format, ...)
     {
         va_list ap;
-        version(X86_64) va_start(ap, __va_argsave); else va_start(ap, format);
+        va_start(ap, format);
         .verror(token.loc, format, ap);
         va_end(ap);
         errors = true;
@@ -2139,7 +2133,7 @@ public:
     final void error(Loc loc, const(char)* format, ...)
     {
         va_list ap;
-        version(X86_64) va_start(ap, __va_argsave); else va_start(ap, format);
+        va_start(ap, format);
         .verror(loc, format, ap);
         va_end(ap);
         errors = true;
@@ -2148,7 +2142,7 @@ public:
     final void deprecation(const(char)* format, ...)
     {
         va_list ap;
-        version(X86_64) va_start(ap, __va_argsave); else va_start(ap, format);
+        va_start(ap, format);
         .vdeprecation(token.loc, format, ap);
         va_end(ap);
         if (global.params.useDeprecated == 0)
@@ -2211,7 +2205,7 @@ public:
                 if (memcmp(p, cast(char*)"__FILE__", 8) == 0)
                 {
                     p += 8;
-                    filespec = mem.strdup(scanloc.filename);
+                    filespec = mem.xstrdup(scanloc.filename);
                     continue;
                 }
                 goto Lerr;
@@ -2233,7 +2227,7 @@ public:
                         goto Lerr;
                     case '"':
                         stringbuffer.writeByte(0);
-                        filespec = mem.strdup(cast(char*)stringbuffer.data);
+                        filespec = mem.xstrdup(cast(char*)stringbuffer.data);
                         p++;
                         break;
                     default:
@@ -2476,7 +2470,7 @@ public:
                     ++len1;
                     insertNewLine = 1;
                 }
-                char* p = cast(char*)mem.malloc(len1 + 1 + len2 + 1);
+                char* p = cast(char*)mem.xmalloc(len1 + 1 + len2 + 1);
                 memcpy(p, c1, len1 - insertNewLine);
                 if (insertNewLine)
                     p[len1 - 1] = '\n';

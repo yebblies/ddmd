@@ -76,10 +76,10 @@ struct Param
     bool useSwitchError; // check for switches without a default
     bool useUnitTests; // generate unittest code
     bool useInline; // inline expand functions
-    bool useScope; // diagnose 'scope' errors
+    bool useDIP25; // implement http://wiki.dlang.org/DIP25
     bool release; // build release version
     bool preservePaths; // true means don't strip path from source file
-    char warnings; // 0: enable warnings
+    char warnings; // 0: disable warnings
     // 1: warnings as errors
     // 2: informational warnings (no errors)
     bool pic; // generate position-independent-code for shared libs

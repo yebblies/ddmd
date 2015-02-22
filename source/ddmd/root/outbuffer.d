@@ -22,7 +22,7 @@ struct OutBuffer
     int notlinehead;
     extern(C++) ~this()
     {
-        mem.free(data);
+        mem.xfree(data);
     }
 
     extern(C++) char* extractData()
@@ -42,7 +42,7 @@ struct OutBuffer
         {
             size = (offset + nbytes) * 2;
             size = (size + 15) & ~15;
-            data = cast(ubyte*)mem.realloc(data, size);
+            data = cast(ubyte*)mem.xrealloc(data, size);
         }
     }
 
@@ -350,7 +350,7 @@ struct OutBuffer
     extern(C++) void printf(const(char)* format, ...)
     {
         va_list ap;
-        version(X86_64) va_start(ap, __va_argsave); else va_start(ap, format);
+        va_start(ap, format);
         vprintf(format, ap);
         va_end(ap);
     }

@@ -26,6 +26,45 @@ private:
     T[SMALLARRAYCAP] smallarray;    // inline storage for small arrays
 
 public:
+    ~this()
+    {
+        if (data != &smallarray[0])
+            mem.xfree(data);
+    }
+
+    char* toChars()
+    {
+        static if (is(typeof(T.init.toChars())))
+        {
+            char** buf = cast(char**)mem.xmalloc(dim * (char *).sizeof);
+            size_t len = 2;
+            for (size_t u = 0; u < dim; u++)
+            {
+                buf[u] = data[u].toChars();
+                len += strlen(buf[u]) + 1;
+            }
+            char* str = cast(char*)mem.xmalloc(len);
+
+            str[0] = '[';
+            char* p = str + 1;
+            for (size_t u = 0; u < dim; u++)
+            {
+                if (u)
+                    *p++ = ',';
+                len = strlen(buf[u]);
+                memcpy(p,buf[u],len);
+                p += len;
+            }
+            *p++ = ']';
+            *p = 0;
+            mem.xfree(buf);
+            return str;
+        }
+        else
+        {
+            assert(0);
+        }
+    }
     void push(T ptr)
     {
         reserve(1);
@@ -51,19 +90,19 @@ public:
                 else
                 {
                     allocdim = nentries;
-                    data = cast(T*)mem.malloc(allocdim * (*data).sizeof);
+                    data = cast(T*)mem.xmalloc(allocdim * (*data).sizeof);
                 }
             }
             else if (allocdim == SMALLARRAYCAP)
             {
                 allocdim = dim + nentries;
-                data = cast(T*)mem.malloc(allocdim * (*data).sizeof);
+                data = cast(T*)mem.xmalloc(allocdim * (*data).sizeof);
                 memcpy(data, smallarray.ptr, dim * (*data).sizeof);
             }
             else
             {
                 allocdim = dim + nentries;
-                data = cast(T*)mem.realloc(data, allocdim * (*data).sizeof);
+                data = cast(T*)mem.xrealloc(data, allocdim * (*data).sizeof);
             }
         }
     }
