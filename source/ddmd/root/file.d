@@ -1,4 +1,3 @@
-
 // Compiler implementation of the D programming language
 // Copyright (c) 1999-2015 by Digital Mars
 // All Rights Reserved
@@ -12,7 +11,7 @@ module ddmd.root.file;
 import core.stdc.errno, core.stdc.stdio, core.stdc.stdlib, core.stdc.string, core.sys.posix.fcntl, core.sys.posix.sys.types, core.sys.posix.unistd, core.sys.posix.utime, core.sys.windows.windows;
 import ddmd.root.array, ddmd.root.filename, ddmd.root.rmem;
 
-version(Windows) alias WIN32_FIND_DATAA = WIN32_FIND_DATA;
+version (Windows) alias WIN32_FIND_DATAA = WIN32_FIND_DATA;
 
 struct File
 {
@@ -20,7 +19,8 @@ struct File
     ubyte* buffer; // data for our file
     size_t len; // amount of data in buffer[]
     FileName* name; // name of our file
-    extern(D) this(const(char)* n)
+
+    extern (D) this(const(char)* n)
     {
         _ref = 0;
         buffer = null;
@@ -28,13 +28,13 @@ struct File
         name = new FileName(n);
     }
 
-    extern(C++) static File* create(const(char)* n)
+    extern (C++) static File* create(const(char)* n)
     {
         return new File(n);
     }
 
     /****************************** File ********************************/
-    extern(D) this(const(FileName)* n)
+    extern (D) this(const(FileName)* n)
     {
         _ref = 0;
         buffer = null;
@@ -42,13 +42,13 @@ struct File
         name = cast(FileName*)n;
     }
 
-    extern(C++) ~this()
+    extern (C++) ~this()
     {
         if (buffer)
         {
             if (_ref == 0)
                 mem.xfree(buffer);
-            version(Windows)
+            version (Windows)
             {
                 if (_ref == 2)
                     UnmapViewOfFile(buffer);
@@ -56,18 +56,18 @@ struct File
         }
     }
 
-    extern(C++) char* toChars()
+    extern (C++) char* toChars()
     {
         return name.toChars();
     }
 
     /*************************************
      */
-    extern(C++) bool read()
+    extern (C++) bool read()
     {
         if (len)
             return false; // already read the file
-        version(Posix)
+        version (Posix)
         {
             size_t size;
             stat_t buf;
@@ -121,7 +121,7 @@ struct File
         err1:
             return true;
         }
-        else version(Windows)
+        else version (Windows)
         {
             DWORD size;
             DWORD numread;
@@ -167,9 +167,9 @@ struct File
      * Returns:
      *      false       success
      */
-    extern(C++) bool write()
+    extern (C++) bool write()
     {
-        version(Posix)
+        version (Posix)
         {
             ssize_t numwritten;
             char* name = this.name.toChars();
@@ -188,7 +188,7 @@ struct File
         err:
             return true;
         }
-        else version(Windows)
+        else version (Windows)
         {
             DWORD numwritten;
             char* name = this.name.toChars();
@@ -216,20 +216,20 @@ struct File
 
     /* Set buffer
      */
-    extern(C++) void setbuffer(void* buffer, size_t len)
+    extern (C++) void setbuffer(void* buffer, size_t len)
     {
         this.buffer = cast(ubyte*)buffer;
         this.len = len;
     }
 
     // delete file
-    extern(C++) void remove()
+    extern (C++) void remove()
     {
-        version(Posix)
+        version (Posix)
         {
             int dummy = .remove(this.name.toChars());
         }
-        else version(Windows)
+        else version (Windows)
         {
             DeleteFileA(this.name.toChars());
         }
@@ -238,6 +238,4 @@ struct File
             assert(0);
         }
     }
-
 }
-

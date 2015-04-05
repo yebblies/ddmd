@@ -1,4 +1,3 @@
-
 // Compiler implementation of the D programming language
 // Copyright (c) 1999-2015 by Digital Mars
 // All Rights Reserved
@@ -2364,7 +2363,6 @@ immutable NameId[] namesZ =
     {"zwnj",             0x0200C},  // ZERO WIDTH NON-JOINER
 ];
 
-
 // @todo@ order namesTable and names? by frequency
 immutable NameId[][] namesTable =
 [
@@ -2373,17 +2371,16 @@ immutable NameId[][] namesTable =
     namesS, namesT, namesU, namesV, namesW, namesX, namesY, namesZ
 ];
 
-extern(C++) int HtmlNamedEntity(const(char)* p, size_t length)
+extern (C++) int HtmlNamedEntity(const(char)* p, size_t length)
 {
     int tableIndex = tolower(*p) - 'a';
     if (tableIndex >= 0 && tableIndex < 26)
     {
-        foreach(entity; namesTable[tableIndex])
+        foreach (entity; namesTable[tableIndex])
         {
-            if (entity.name == p[0..length])
+            if (entity.name == p[0 .. length])
                 return entity.value;
         }
     }
     return -1;
 }
-

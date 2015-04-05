@@ -1,4 +1,3 @@
-
 // Compiler implementation of the D programming language
 // Copyright (c) 1999-2015 by Digital Mars
 // All Rights Reserved
@@ -275,6 +274,7 @@ enum TOK : int
     TOKcantexp,
     TOKMAX,
 }
+
 alias TOKreserved = TOK.TOKreserved;
 alias TOKlparen = TOK.TOKlparen;
 alias TOKrparen = TOK.TOKrparen;
@@ -519,6 +519,7 @@ alias TOKcantexp = TOK.TOKcantexp;
 alias TOKMAX = TOK.TOKMAX;
 
 enum TOKwild = TOKinout;
+
 struct Token
 {
     Token* next;
@@ -527,27 +528,28 @@ struct Token
     TOK value;
     const(char)* blockComment; // doc comment string prior to this token
     const(char)* lineComment; // doc comment for previous token
+
     union
     {
         // Integers
-        d_int32 int32value;
-        d_uns32 uns32value;
         d_int64 int64value;
         d_uns64 uns64value;
         // Floats
         d_float80 float80value;
+
         struct
         {
             char* ustring; // UTF8 string
             uint len;
             ubyte postfix; // 'c', 'w', 'd'
         }
-        ;
+
         Identifier ident;
     }
-    ;
-    extern(C++) static __gshared const(char)*[TOKMAX] tochars;
-    extern(C++) static void initTokens()
+
+    extern (C++) static __gshared const(char)*[TOKMAX] tochars;
+
+    extern (C++) static void initTokens()
     {
         for (nkeywords = 0; keywords[nkeywords].name; nkeywords++)
         {
@@ -667,8 +669,9 @@ struct Token
     }
 
     /************************* Token **********************************************/
-    extern(C++) static __gshared Token* freelist = null;
-    extern(C++) static Token* alloc()
+    extern (C++) static __gshared Token* freelist = null;
+
+    extern (C++) static Token* alloc()
     {
         if (Token.freelist)
         {
@@ -680,13 +683,13 @@ struct Token
         return new Token();
     }
 
-    extern(C++) void free()
+    extern (C++) void free()
     {
         next = freelist;
         freelist = &this;
     }
 
-    extern(C++) int isKeyword()
+    extern (C++) int isKeyword()
     {
         for (size_t u = 0; u < nkeywords; u++)
         {
@@ -698,26 +701,26 @@ struct Token
 
     debug
     {
-        extern(C++) void print()
+        extern (C++) void print()
         {
             fprintf(stderr, "%s\n", toChars());
         }
-
     }
-    extern(C++) const(char)* toChars()
+
+    extern (C++) const(char)* toChars()
     {
         static __gshared char[3 + 3 * (float80value).sizeof + 1] buffer;
         const(char)* p = &buffer[0];
         switch (value)
         {
         case TOKint32v:
-            sprintf(&buffer[0], "%d", int32value);
+            sprintf(&buffer[0], "%d", cast(d_int32)int64value);
             break;
         case TOKuns32v:
         case TOKcharv:
         case TOKwcharv:
         case TOKdcharv:
-            sprintf(&buffer[0], "%uU", uns32value);
+            sprintf(&buffer[0], "%uU", cast(d_uns32)uns64value);
             break;
         case TOKint64v:
             sprintf(&buffer[0], "%lldL", cast(long)int64value);
@@ -840,7 +843,7 @@ struct Token
         return p;
     }
 
-    extern(C++) static const(char)* toChars(TOK value)
+    extern (C++) static const(char)* toChars(TOK value)
     {
         static __gshared char[3 + 3 * (value).sizeof + 1] buffer;
         const(char)* p = tochars[value];
@@ -851,7 +854,6 @@ struct Token
         }
         return p;
     }
-
 }
 
 /****************************************
@@ -862,8 +864,8 @@ struct Keyword
     TOK value;
 }
 
-extern(C++) __gshared size_t nkeywords;
-extern(C++) __gshared Keyword* keywords = 
+extern (C++) __gshared size_t nkeywords;
+extern (C++) __gshared Keyword* keywords =
 [
     Keyword("this", TOKthis),
     Keyword("super", TOKsuper),
@@ -979,5 +981,4 @@ extern(C++) __gshared Keyword* keywords =
     Keyword("shared", TOKshared),
     Keyword("immutable", TOKimmutable),
     Keyword(null, TOKreserved)
-]
-;
+];

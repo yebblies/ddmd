@@ -1,4 +1,3 @@
-
 // Compiler implementation of the D programming language
 // Copyright (c) 1999-2015 by Digital Mars
 // All Rights Reserved
@@ -11,12 +10,16 @@ module ddmd.root.longdouble;
 
 import core.stdc.stdio;
 
-real ldouble(T)(T x) { return cast(real)x; }
+real ldouble(T)(T x)
+{
+    return cast(real)x;
+}
 
 size_t ld_sprint(char* str, int fmt, real x)
 {
     if ((cast(real)cast(ulong)x) == x)
-    {   // ((1.5 -> 1 -> 1.0) == 1.5) is false
+    {
+        // ((1.5 -> 1 -> 1.0) == 1.5) is false
         // ((1.0 -> 1 -> 1.0) == 1.0) is true
         // see http://en.cppreference.com/w/cpp/io/c/fprintf
         char sfmt[5] = "%#Lg\0";

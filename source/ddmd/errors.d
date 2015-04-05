@@ -1,4 +1,3 @@
-
 // Compiler implementation of the D programming language
 // Copyright (c) 1999-2015 by Digital Mars
 // All Rights Reserved
@@ -12,9 +11,12 @@ module ddmd.errors;
 import core.stdc.stdarg, core.stdc.stdio, core.stdc.stdlib, core.stdc.string, core.sys.posix.unistd, core.sys.windows.windows;
 import ddmd.globals, ddmd.root.outbuffer, ddmd.root.rmem;
 
-version(Windows) extern(C) int isatty(int);
-version(Windows) alias _isatty = isatty;
-version(Windows) int _fileno(FILE* f) { return f._file; }
+version (Windows) extern (C) int isatty(int);
+version (Windows) alias _isatty = isatty;
+version (Windows) int _fileno(FILE* f)
+{
+    return f._file;
+}
 
 enum COLOR : int
 {
@@ -27,6 +29,7 @@ enum COLOR : int
     COLOR_CYAN = COLOR_GREEN | COLOR_BLUE,
     COLOR_WHITE = COLOR_RED | COLOR_GREEN | COLOR_BLUE,
 }
+
 alias COLOR_BLACK = COLOR.COLOR_BLACK;
 alias COLOR_RED = COLOR.COLOR_RED;
 alias COLOR_GREEN = COLOR.COLOR_GREEN;
@@ -36,9 +39,9 @@ alias COLOR_MAGENTA = COLOR.COLOR_MAGENTA;
 alias COLOR_CYAN = COLOR.COLOR_CYAN;
 alias COLOR_WHITE = COLOR.COLOR_WHITE;
 
-version(Windows)
+version (Windows)
 {
-    extern(C++) static WORD consoleAttributes(HANDLE h)
+    extern (C++) static WORD consoleAttributes(HANDLE h)
     {
         static __gshared CONSOLE_SCREEN_BUFFER_INFO sbi;
         static __gshared bool sbi_inited = false;
@@ -47,15 +50,15 @@ version(Windows)
         return sbi.wAttributes;
     }
 
-    enum  : int
+    enum : int
     {
         FOREGROUND_WHITE = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE,
     }
-
 }
-extern(C++) bool isConsoleColorSupported()
+
+extern (C++) bool isConsoleColorSupported()
 {
-    version(Windows)
+    version (Windows)
     {
         return _isatty(_fileno(stderr)) != 0;
     }
@@ -70,9 +73,9 @@ extern(C++) bool isConsoleColorSupported()
     }
 }
 
-extern(C++) void setConsoleColorBright(bool bright)
+extern (C++) void setConsoleColorBright(bool bright)
 {
-    version(Windows)
+    version (Windows)
     {
         HANDLE h = GetStdHandle(STD_ERROR_HANDLE);
         WORD attr = consoleAttributes(h);
@@ -84,9 +87,9 @@ extern(C++) void setConsoleColorBright(bool bright)
     }
 }
 
-extern(C++) void setConsoleColor(COLOR color, bool bright)
+extern (C++) void setConsoleColor(COLOR color, bool bright)
 {
-    version(Windows)
+    version (Windows)
     {
         HANDLE h = GetStdHandle(STD_ERROR_HANDLE);
         WORD attr = consoleAttributes(h);
@@ -99,9 +102,9 @@ extern(C++) void setConsoleColor(COLOR color, bool bright)
     }
 }
 
-extern(C++) void resetConsoleColor()
+extern (C++) void resetConsoleColor()
 {
-    version(Windows)
+    version (Windows)
     {
         HANDLE h = GetStdHandle(STD_ERROR_HANDLE);
         SetConsoleTextAttribute(h, consoleAttributes(h));
@@ -115,7 +118,7 @@ extern(C++) void resetConsoleColor()
 /**************************************
  * Print error message
  */
-extern(C++) void error(Loc loc, const(char)* format, ...)
+extern (C++) void error(Loc loc, const(char)* format, ...)
 {
     va_list ap;
     va_start(ap, format);
@@ -123,7 +126,7 @@ extern(C++) void error(Loc loc, const(char)* format, ...)
     va_end(ap);
 }
 
-extern(C++) void error(const(char)* filename, uint linnum, uint charnum, const(char)* format, ...)
+extern (C++) void error(const(char)* filename, uint linnum, uint charnum, const(char)* format, ...)
 {
     Loc loc;
     loc.filename = cast(char*)filename;
@@ -135,7 +138,7 @@ extern(C++) void error(const(char)* filename, uint linnum, uint charnum, const(c
     va_end(ap);
 }
 
-extern(C++) void errorSupplemental(Loc loc, const(char)* format, ...)
+extern (C++) void errorSupplemental(Loc loc, const(char)* format, ...)
 {
     va_list ap;
     va_start(ap, format);
@@ -143,7 +146,7 @@ extern(C++) void errorSupplemental(Loc loc, const(char)* format, ...)
     va_end(ap);
 }
 
-extern(C++) void warning(Loc loc, const(char)* format, ...)
+extern (C++) void warning(Loc loc, const(char)* format, ...)
 {
     va_list ap;
     va_start(ap, format);
@@ -151,7 +154,7 @@ extern(C++) void warning(Loc loc, const(char)* format, ...)
     va_end(ap);
 }
 
-extern(C++) void warningSupplemental(Loc loc, const(char)* format, ...)
+extern (C++) void warningSupplemental(Loc loc, const(char)* format, ...)
 {
     va_list ap;
     va_start(ap, format);
@@ -159,7 +162,7 @@ extern(C++) void warningSupplemental(Loc loc, const(char)* format, ...)
     va_end(ap);
 }
 
-extern(C++) void deprecation(Loc loc, const(char)* format, ...)
+extern (C++) void deprecation(Loc loc, const(char)* format, ...)
 {
     va_list ap;
     va_start(ap, format);
@@ -167,7 +170,7 @@ extern(C++) void deprecation(Loc loc, const(char)* format, ...)
     va_end(ap);
 }
 
-extern(C++) void deprecationSupplemental(Loc loc, const(char)* format, ...)
+extern (C++) void deprecationSupplemental(Loc loc, const(char)* format, ...)
 {
     va_list ap;
     va_start(ap, format);
@@ -176,7 +179,7 @@ extern(C++) void deprecationSupplemental(Loc loc, const(char)* format, ...)
 }
 
 // Just print, doesn't care about gagging
-extern(C++) void verrorPrint(Loc loc, COLOR headerColor, const(char)* header, const(char)* format, va_list ap, const(char)* p1 = null, const(char)* p2 = null)
+extern (C++) void verrorPrint(Loc loc, COLOR headerColor, const(char)* header, const(char)* format, va_list ap, const(char)* p1 = null, const(char)* p2 = null)
 {
     char* p = loc.toChars();
     if (global.params.color)
@@ -200,7 +203,7 @@ extern(C++) void verrorPrint(Loc loc, COLOR headerColor, const(char)* header, co
 }
 
 // header is "Error: " by default (see errors.h)
-extern(C++) void verror(Loc loc, const(char)* format, va_list ap, const(char)* p1 = null, const(char)* p2 = null, const(char)* header = "Error: ")
+extern (C++) void verror(Loc loc, const(char)* format, va_list ap, const(char)* p1 = null, const(char)* p2 = null, const(char)* header = "Error: ")
 {
     global.errors++;
     if (!global.gag)
@@ -218,13 +221,13 @@ extern(C++) void verror(Loc loc, const(char)* format, va_list ap, const(char)* p
 }
 
 // Doesn't increase error count, doesn't print "Error:".
-extern(C++) void verrorSupplemental(Loc loc, const(char)* format, va_list ap)
+extern (C++) void verrorSupplemental(Loc loc, const(char)* format, va_list ap)
 {
     if (!global.gag)
         verrorPrint(loc, COLOR_RED, "       ", format, ap);
 }
 
-extern(C++) void vwarning(Loc loc, const(char)* format, va_list ap)
+extern (C++) void vwarning(Loc loc, const(char)* format, va_list ap)
 {
     if (global.params.warnings && !global.gag)
     {
@@ -235,13 +238,13 @@ extern(C++) void vwarning(Loc loc, const(char)* format, va_list ap)
     }
 }
 
-extern(C++) void vwarningSupplemental(Loc loc, const(char)* format, va_list ap)
+extern (C++) void vwarningSupplemental(Loc loc, const(char)* format, va_list ap)
 {
     if (global.params.warnings && !global.gag)
         verrorPrint(loc, COLOR_YELLOW, "       ", format, ap);
 }
 
-extern(C++) void vdeprecation(Loc loc, const(char)* format, va_list ap, const(char)* p1 = null, const(char)* p2 = null)
+extern (C++) void vdeprecation(Loc loc, const(char)* format, va_list ap, const(char)* p1 = null, const(char)* p2 = null)
 {
     static __gshared const(char)* header = "Deprecation: ";
     if (global.params.useDeprecated == 0)
@@ -250,7 +253,7 @@ extern(C++) void vdeprecation(Loc loc, const(char)* format, va_list ap, const(ch
         verrorPrint(loc, COLOR_BLUE, header, format, ap, p1, p2);
 }
 
-extern(C++) void vdeprecationSupplemental(Loc loc, const(char)* format, va_list ap)
+extern (C++) void vdeprecationSupplemental(Loc loc, const(char)* format, va_list ap)
 {
     if (global.params.useDeprecated == 0)
         verrorSupplemental(loc, format, ap);
@@ -262,9 +265,9 @@ extern(C++) void vdeprecationSupplemental(Loc loc, const(char)* format, va_list 
  * Call this after printing out fatal error messages to clean up and exit
  * the compiler.
  */
-extern(C++) void fatal()
+extern (C++) void fatal()
 {
-    version(none)
+    version (none)
     {
         halt();
     }
@@ -275,11 +278,10 @@ extern(C++) void fatal()
  * Try to stop forgetting to remove the breakpoints from
  * release builds.
  */
-extern(C++) void halt()
+extern (C++) void halt()
 {
     debug
     {
         *cast(char*)0 = 0;
     }
 }
-

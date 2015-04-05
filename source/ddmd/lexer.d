@@ -1,4 +1,3 @@
-
 // Compiler implementation of the D programming language
 // Copyright (c) 1999-2015 by Digital Mars
 // All Rights Reserved
@@ -18,26 +17,27 @@ enum PS = 0x2029;
 /********************************************
  * Do our own char maps
  */
-extern(C++) __gshared ubyte[256] cmtable;
-extern(C++) __gshared const(int) CMoctal = 0x1;
-extern(C++) __gshared const(int) CMhex = 0x2;
-extern(C++) __gshared const(int) CMidchar = 0x4;
-extern(C++) bool isoctal(char c)
+extern (C++) __gshared ubyte[256] cmtable;
+extern (C++) __gshared const(int) CMoctal = 0x1;
+extern (C++) __gshared const(int) CMhex = 0x2;
+extern (C++) __gshared const(int) CMidchar = 0x4;
+
+extern (C++) bool isoctal(char c)
 {
     return (cmtable[c] & CMoctal) != 0;
 }
 
-extern(C++) bool ishex(char c)
+extern (C++) bool ishex(char c)
 {
     return (cmtable[c] & CMhex) != 0;
 }
 
-extern(C++) bool isidchar(char c)
+extern (C++) bool isidchar(char c)
 {
     return (cmtable[c] & CMidchar) != 0;
 }
 
-extern(C++) static void cmtable_init()
+extern (C++) static void cmtable_init()
 {
     for (uint c = 0; c < 256; c++)
     {
@@ -50,9 +50,9 @@ extern(C++) static void cmtable_init()
     }
 }
 
-version(unittest)
+version (unittest)
 {
-    extern(C++) void unittest_lexer()
+    extern (C++) void unittest_lexer()
     {
         //printf("unittest_lexer()\n");
         /* Not much here, just trying things out.
@@ -68,13 +68,13 @@ version(unittest)
         tok = lex1.nextToken();
         assert(tok == TOKeof);
     }
-
 }
-extern(C++) class Lexer
+
+extern (C++) class Lexer
 {
 public:
     /*************************** Lexer ********************************************/
-    extern(C++) static __gshared OutBuffer stringbuffer;
+    extern (C++) static __gshared OutBuffer stringbuffer;
     Loc scanloc; // for error messages
     const(char)* base; // pointer to start of buffer
     const(char)* end; // past end of buffer
@@ -85,7 +85,8 @@ public:
     int anyToken; // !=0 means seen at least one token
     int commentToken; // !=0 means comments are TOKcomment's
     bool errors; // errors occurred during lexing or parsing
-    final extern(D) this(const(char)* filename, const(char)* base, size_t begoffset, size_t endoffset, int doDocComment, int commentToken)
+
+    final extern (D) this(const(char)* filename, const(char)* base, size_t begoffset, size_t endoffset, int doDocComment, int commentToken)
     {
         scanloc = Loc(filename, 1, 1);
         //printf("Lexer::Lexer(%p,%d)\n",base,length);
@@ -142,7 +143,7 @@ public:
         cmtable_init();
         Identifier.initTable();
         Token.initTokens();
-        version(unittest)
+        version (unittest)
         {
             unittest_lexer();
         }
@@ -1138,7 +1139,6 @@ public:
                     c = *++p;
                 }
                 while (++n < 3 && isoctal(cast(char)c));
-                {}
                 c = v;
                 if (c > 0xFF)
                     error("escape octal sequence \\%03o is larger than \\377", c);
@@ -1840,11 +1840,11 @@ public:
             FLAGS_unsigned = 2, // u or U suffix
             FLAGS_long = 4, // L suffix
         }
+
         alias FLAGS_none = FLAGS.FLAGS_none;
         alias FLAGS_decimal = FLAGS.FLAGS_decimal;
         alias FLAGS_unsigned = FLAGS.FLAGS_unsigned;
         alias FLAGS_long = FLAGS.FLAGS_long;
-
         ;
         FLAGS flags = (base == 10) ? FLAGS_decimal : FLAGS_none;
         // Parse trailing 'u', 'U', 'l' or 'L' in any combination
@@ -2275,7 +2275,8 @@ public:
         assert(c & 0x80);
         // Check length of remaining string up to 6 UTF-8 characters
         for (len = 1; len < 6 && s[len]; len++)
-            {}
+        {
+        }
         idx = 0;
         msg = utf_decodeChar(s, len, &idx, &u);
         p += idx - 1;
@@ -2489,6 +2490,4 @@ private:
         scanloc.linnum++;
         line = p;
     }
-
 }
-

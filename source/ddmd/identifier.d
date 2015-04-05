@@ -1,4 +1,3 @@
-
 // Compiler implementation of the D programming language
 // Copyright (c) 1999-2015 by Digital Mars
 // All Rights Reserved
@@ -12,13 +11,14 @@ module ddmd.identifier;
 import core.stdc.stdio, core.stdc.string;
 import ddmd.globals, ddmd.id, ddmd.root.outbuffer, ddmd.root.rootobject, ddmd.root.stringtable, ddmd.tokens;
 
-extern(C++) final class Identifier : RootObject
+extern (C++) final class Identifier : RootObject
 {
 public:
     int value;
     const(char)* string;
     size_t len;
-    extern(D) this(const(char)* string, int value)
+
+    extern (D) this(const(char)* string, int value)
     {
         //printf("Identifier('%s', %d)\n", string, value);
         this.string = string;
@@ -89,7 +89,8 @@ public:
         return DYNCAST_IDENTIFIER;
     }
 
-    extern(C++) static __gshared StringTable stringtable;
+    extern (C++) static __gshared StringTable stringtable;
+
     static Identifier generateId(const(char)* prefix)
     {
         static __gshared size_t i;
@@ -137,6 +138,4 @@ public:
     {
         stringtable._init(28000);
     }
-
 }
-

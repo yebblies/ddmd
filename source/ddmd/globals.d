@@ -1,4 +1,3 @@
-
 // Compiler implementation of the D programming language
 // Copyright (c) 1999-2015 by Digital Mars
 // All Rights Reserved
@@ -14,8 +13,9 @@ import ddmd.root.array, ddmd.root.filename, ddmd.root.outbuffer;
 
 template xversion(string s)
 {
-    enum xversion = mixin(`{ version(` ~ s ~ `) return true; else return false; }`)();
+    enum xversion = mixin(`{ version (` ~ s ~ `) return true; else return false; }`)();
 }
+
 enum __linux__ = xversion!`linux`;
 enum __APPLE__ = xversion!`OSX`;
 enum __FreeBSD__ = xversion!`FreeBSD`;
@@ -141,8 +141,10 @@ struct Compiler
     const(char)* vendor; // Compiler backend name
 }
 
-alias uint structalign_t;
+alias structalign_t = uint;
+
 enum STRUCTALIGN_DEFAULT = (cast(structalign_t)~0);
+
 // magic value means "match whatever the underlying C compiler does"
 // other values are all powers of 2
 struct Global
@@ -172,9 +174,10 @@ struct Global
     uint gag; // !=0 means gag reporting of errors & warnings
     uint gaggedErrors; // number of errors reported while gagged
     uint errorLimit;
+
     /* Start gagging. Return the current number of gagged errors
      */
-    extern(C++) uint startGagging()
+    extern (C++) uint startGagging()
     {
         ++gag;
         return gaggedErrors;
@@ -183,7 +186,7 @@ struct Global
     /* End gagging, restoring the old gagged state.
      * Return true if errors occured while gagged.
      */
-    extern(C++) bool endGagging(uint oldGagged)
+    extern (C++) bool endGagging(uint oldGagged)
     {
         bool anyErrs = (gaggedErrors != oldGagged);
         --gag;
@@ -198,14 +201,14 @@ struct Global
      *  has occured in the current context. An error message
      *  may or may not have been printed.
      */
-    extern(C++) void increaseErrorCount()
+    extern (C++) void increaseErrorCount()
     {
         if (gag)
             ++gaggedErrors;
         ++errors;
     }
 
-    extern(C++) void _init()
+    extern (C++) void _init()
     {
         inifilename = null;
         mars_ext = "d";
@@ -276,7 +279,6 @@ struct Global
         memset(&params, 0, (Param).sizeof);
         errorLimit = 20;
     }
-
 }
 
 // Because int64_t and friends may be any integral type of the
@@ -291,35 +293,37 @@ alias dinteger_t = ulong;
 alias sinteger_t = long;
 alias uinteger_t = ulong;
 
-alias int8_t d_int8;
-alias uint8_t d_uns8;
-alias int16_t d_int16;
-alias uint16_t d_uns16;
-alias int32_t d_int32;
-alias uint32_t d_uns32;
-alias int64_t d_int64;
-alias uint64_t d_uns64;
-alias float d_float32;
-alias double d_float64;
-alias real d_float80;
-alias d_uns8 d_char;
-alias d_uns16 d_wchar;
-alias d_uns32 d_dchar;
-alias real real_t;
+alias d_int8 = int8_t;
+alias d_uns8 = uint8_t;
+alias d_int16 = int16_t;
+alias d_uns16 = uint16_t;
+alias d_int32 = int32_t;
+alias d_uns32 = uint32_t;
+alias d_int64 = int64_t;
+alias d_uns64 = uint64_t;
+alias d_float32 = float;
+alias d_float64 = double;
+alias d_float80 = real;
+alias d_char = d_uns8;
+alias d_wchar = d_uns16;
+alias d_dchar = d_uns32;
+alias real_t = real;
+
 // file location
 struct Loc
 {
     const(char)* filename;
     uint linnum;
     uint charnum;
-    extern(D) this(const(char)* filename, uint linnum, uint charnum)
+
+    extern (D) this(const(char)* filename, uint linnum, uint charnum)
     {
         this.linnum = linnum;
         this.charnum = charnum;
         this.filename = filename;
     }
 
-    extern(C++) char* toChars()
+    extern (C++) char* toChars()
     {
         OutBuffer buf;
         if (filename)
@@ -336,11 +340,10 @@ struct Loc
         return buf.extractString();
     }
 
-    extern(C++) bool equals(ref const(Loc) loc)
+    extern (C++) bool equals(ref const(Loc) loc)
     {
         return (!global.params.showColumns || charnum == loc.charnum) && linnum == loc.linnum && FileName.equals(filename, loc.filename);
     }
-
 }
 
 enum LINK : int
@@ -352,6 +355,7 @@ enum LINK : int
     LINKwindows,
     LINKpascal,
 }
+
 alias LINKdefault = LINK.LINKdefault;
 alias LINKd = LINK.LINKd;
 alias LINKc = LINK.LINKc;
@@ -369,6 +373,7 @@ enum DYNCAST : int
     DYNCAST_TUPLE,
     DYNCAST_PARAMETER,
 }
+
 alias DYNCAST_OBJECT = DYNCAST.DYNCAST_OBJECT;
 alias DYNCAST_EXPRESSION = DYNCAST.DYNCAST_EXPRESSION;
 alias DYNCAST_DSYMBOL = DYNCAST.DYNCAST_DSYMBOL;
@@ -384,10 +389,12 @@ enum MATCH : int
     MATCHconst, // match with conversion to const
     MATCHexact, // exact match
 }
+
 alias MATCHnomatch = MATCH.MATCHnomatch;
 alias MATCHconvert = MATCH.MATCHconvert;
 alias MATCHconst = MATCH.MATCHconst;
 alias MATCHexact = MATCH.MATCHexact;
 
-alias uinteger_t StorageClass;
-extern(C++) __gshared Global global;
+alias StorageClass = uinteger_t;
+
+extern (C++) __gshared Global global;

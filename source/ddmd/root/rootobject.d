@@ -1,4 +1,3 @@
-
 // Compiler implementation of the D programming language
 // Copyright (c) 1999-2015 by Digital Mars
 // All Rights Reserved
@@ -13,22 +12,39 @@ import core.stdc.stdio;
 
 import ddmd.root.outbuffer;
 
-extern(C++)
-class RootObject
+extern (C++) class RootObject
 {
     this()
     {
     }
+
     bool equals(RootObject o)
     {
         return o is this;
     }
-    int compare(RootObject) { assert(0); }
+
+    int compare(RootObject)
+    {
+        assert(0);
+    }
+
     void print()
     {
         printf("%s %p\n", toChars(), this);
     }
-    char *toChars() { assert(0); }
-    void toBuffer(OutBuffer* buf) { assert(0); }
-    int dyncast() { assert(0); }
+
+    char* toChars()
+    {
+        assert(0);
+    }
+
+    void toBuffer(OutBuffer* buf)
+    {
+        assert(0);
+    }
+
+    int dyncast()
+    {
+        assert(0);
+    }
 }
