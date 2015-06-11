@@ -95,7 +95,7 @@ struct StringValue
 
     extern (C++) const(const(char)*) toDchars()
     {
-        return cast(char*)(&this + 1);
+        return cast(const(char)*)(&this + 1);
     }
 }
 
@@ -186,10 +186,33 @@ public:
         return getValue(table[i].vptr);
     }
 
+    /********************************
+     * Walk the contents of the string table,
+     * calling fp for each entry.
+     * Params:
+     *      fp = function to call. Returns !=0 to stop
+     * Returns:
+     *      last return value of fp call
+     */
+    extern (C++) int apply(int function(StringValue*) fp)
+    {
+        for (size_t i = 0; i < tabledim; ++i)
+        {
+            StringEntry* se = &table[i];
+            if (!se.vptr)
+                continue;
+            StringValue* sv = getValue(se.vptr);
+            int result = (*fp)(sv);
+            if (result)
+                return result;
+        }
+        return 0;
+    }
+
 private:
     extern (C++) uint32_t allocValue(const(char)* s, size_t length)
     {
-        const(size_t) nbytes = (StringValue).sizeof + length + 1;
+        const(size_t) nbytes = StringValue.sizeof + length + 1;
         if (!npools || nfill + nbytes > POOL_SIZE)
         {
             pools = cast(uint8_t**)mem.xrealloc(pools, ++npools * (pools[0]).sizeof);

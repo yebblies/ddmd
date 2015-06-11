@@ -22,10 +22,7 @@ enum __FreeBSD__ = xversion!`FreeBSD`;
 enum __OpenBSD__ = xversion!`OpenBSD`;
 enum __sun = xversion!`Solaris`;
 
-enum IN_GCC = xversion!`GNU`;
-enum _MSC_VER = false;
-
-enum __GLIBC__ = xversion!`linux`;
+enum IN_GCC = xversion!`IN_GCC`;
 
 enum TARGET_LINUX = xversion!`linux`;
 enum TARGET_OSX = xversion!`OSX`;
@@ -33,6 +30,19 @@ enum TARGET_FREEBSD = xversion!`FreeBSD`;
 enum TARGET_OPENBSD = xversion!`OpenBSD`;
 enum TARGET_SOLARIS = xversion!`Solaris`;
 enum TARGET_WINDOS = xversion!`Windows`;
+
+enum BOUNDSCHECK : int
+{
+    BOUNDSCHECKdefault, // initial value
+    BOUNDSCHECKoff, // never do bounds checking
+    BOUNDSCHECKon, // always do bounds checking
+    BOUNDSCHECKsafeonly, // do bounds checking only in @safe functions
+}
+
+alias BOUNDSCHECKdefault = BOUNDSCHECK.BOUNDSCHECKdefault;
+alias BOUNDSCHECKoff = BOUNDSCHECK.BOUNDSCHECKoff;
+alias BOUNDSCHECKon = BOUNDSCHECK.BOUNDSCHECKon;
+alias BOUNDSCHECKsafeonly = BOUNDSCHECK.BOUNDSCHECKsafeonly;
 
 // Put command line switches in here
 struct Param
@@ -44,11 +54,13 @@ struct Param
     bool multiobj; // break one object file into multiple ones
     bool oneobj; // write one object file instead of multiple ones
     bool trace; // insert profiling hooks
+    bool tracegc; // instrument calls to 'new'
     bool verbose; // verbose compile
     bool showColumns; // print character (column) numbers in diagnostics
     bool vtls; // identify thread local variables
     char vgc; // identify gc usage
     bool vfield; // identify non-mutable field variables
+    bool vcomplex; // identify complex/imaginary type usage
     char symdebug; // insert debug symbolic information
     bool alwaysframe; // always emit standard stack frame
     bool optimize; // run optimizer
@@ -69,9 +81,6 @@ struct Param
     bool useInvariants; // generate class invariant checks
     bool useIn; // generate precondition checks
     bool useOut; // generate postcondition checks
-    char useArrayBounds; // 0: no array bounds checks
-    // 1: array bounds checks for safe functions only
-    // 2: array bounds checks for all functions
     bool stackstomp; // add stack stomping code
     bool useSwitchError; // check for switches without a default
     bool useUnitTests; // generate unittest code
@@ -92,6 +101,7 @@ struct Param
     bool betterC; // be a "better C" compiler; no dependency on D runtime
     bool addMain; // add a default main() function
     bool allInst; // generate code for all template instantiations
+    BOUNDSCHECK useArrayBounds;
     const(char)* argv0; // program name
     Array!(const(char)*)* imppath; // array of char*'s of where to look for import modules
     Array!(const(char)*)* fileImppath; // array of char*'s of where to look for file import modules
@@ -123,8 +133,7 @@ struct Param
     bool debugx;
     bool debugy;
     bool run; // run resulting executable
-    size_t runargs_length;
-    const(char)** runargs; // arguments for executable
+    Strings runargs; // arguments for executable
     // Linker stuff
     Array!(const(char)*)* objfiles;
     Array!(const(char)*)* linkswitches;
@@ -270,13 +279,13 @@ struct Global
         {
             static assert(0, "fix this");
         }
-        copyright = "Copyright (c) 1999-2014 by Digital Mars";
+        copyright = "Copyright (c) 1999-2015 by Digital Mars";
         written = "written by Walter Bright";
-        _version = "v2.067";
+        _version = "v2.068";
         compiler.vendor = "Digital Mars D";
         stdmsg = stdout;
         main_d = "__main.d";
-        memset(&params, 0, (Param).sizeof);
+        memset(&params, 0, Param.sizeof);
         errorLimit = 20;
     }
 }
@@ -394,6 +403,17 @@ alias MATCHnomatch = MATCH.MATCHnomatch;
 alias MATCHconvert = MATCH.MATCHconvert;
 alias MATCHconst = MATCH.MATCHconst;
 alias MATCHexact = MATCH.MATCHexact;
+
+enum PINLINE : int
+{
+    PINLINEdefault, // as specified on the command line
+    PINLINEnever, // never inline
+    PINLINEalways, // always inline
+}
+
+alias PINLINEdefault = PINLINE.PINLINEdefault;
+alias PINLINEnever = PINLINE.PINLINEnever;
+alias PINLINEalways = PINLINE.PINLINEalways;
 
 alias StorageClass = uinteger_t;
 

@@ -58,7 +58,7 @@ version (unittest)
         /* Not much here, just trying things out.
          */
         const(char)* text = "int";
-        scope Lexer lex1 = new Lexer(null, cast(char*)text, 0, (text).sizeof, 0, 0);
+        scope Lexer lex1 = new Lexer(null, cast(char*)text, 0, text.sizeof, 0, 0);
         TOK tok;
         tok = lex1.nextToken();
         //printf("tok == %s, %d, %d\n", Token::toChars(tok), tok, TOKint32);
@@ -91,7 +91,7 @@ public:
         scanloc = Loc(filename, 1, 1);
         //printf("Lexer::Lexer(%p,%d)\n",base,length);
         //printf("lexer.filename = %s\n", filename);
-        memset(&token, 0, (token).sizeof);
+        memset(&token, 0, token.sizeof);
         this.base = base;
         this.end = base + endoffset;
         p = base + begoffset;
@@ -154,7 +154,7 @@ public:
         if (token.next)
         {
             Token* t = token.next;
-            memcpy(&token, t, (Token).sizeof);
+            memcpy(&token, t, Token.sizeof);
             t.free();
         }
         else
@@ -1822,7 +1822,7 @@ public:
             }
             n = n2 + d;
             // if n needs more than 64 bits
-            if ((n).sizeof > 8 && n > 0xFFFFFFFFFFFFFFFFUL)
+            if (n.sizeof > 8 && n > 0xFFFFFFFFFFFFFFFFUL)
             {
                 overflow = true;
             }

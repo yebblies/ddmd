@@ -138,6 +138,8 @@ enum TOK : int
     TOKuns32v,
     TOKint64v,
     TOKuns64v,
+    TOKint128v,
+    TOKuns128v,
     TOKfloat32v,
     TOKfloat64v,
     TOKfloat80v,
@@ -182,7 +184,7 @@ enum TOK : int
     TOKwchar,
     TOKdchar,
     TOKbool,
-    // 157
+    // 159
     // Aggregates
     TOKstruct,
     TOKclass,
@@ -391,6 +393,8 @@ alias TOKint32v = TOK.TOKint32v;
 alias TOKuns32v = TOK.TOKuns32v;
 alias TOKint64v = TOK.TOKint64v;
 alias TOKuns64v = TOK.TOKuns64v;
+alias TOKint128v = TOK.TOKint128v;
+alias TOKuns128v = TOK.TOKuns128v;
 alias TOKfloat32v = TOK.TOKfloat32v;
 alias TOKfloat64v = TOK.TOKfloat64v;
 alias TOKfloat80v = TOK.TOKfloat80v;
@@ -709,7 +713,7 @@ struct Token
 
     extern (C++) const(char)* toChars()
     {
-        static __gshared char[3 + 3 * (float80value).sizeof + 1] buffer;
+        static __gshared char[3 + 3 * float80value.sizeof + 1] buffer;
         const(char)* p = &buffer[0];
         switch (value)
         {
@@ -845,7 +849,7 @@ struct Token
 
     extern (C++) static const(char)* toChars(TOK value)
     {
-        static __gshared char[3 + 3 * (value).sizeof + 1] buffer;
+        static __gshared char[3 + 3 * value.sizeof + 1] buffer;
         const(char)* p = tochars[value];
         if (!p)
         {
