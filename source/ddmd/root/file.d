@@ -13,6 +13,8 @@ import ddmd.root.array, ddmd.root.filename, ddmd.root.rmem;
 
 version (Windows) alias WIN32_FIND_DATAA = WIN32_FIND_DATA;
 
+/***********************************************************
+ */
 struct File
 {
     int _ref; // != 0 if this is a reference to someone else's buffer
@@ -33,7 +35,6 @@ struct File
         return new File(n);
     }
 
-    /****************************** File ********************************/
     extern (D) this(const(FileName)* n)
     {
         _ref = 0;
@@ -195,7 +196,7 @@ struct File
             HANDLE h = CreateFileA(name, GENERIC_WRITE, 0, null, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, null);
             if (h == INVALID_HANDLE_VALUE)
                 goto err;
-            if (WriteFile(h, buffer, len, &numwritten, null) != TRUE)
+            if (WriteFile(h, buffer, cast(DWORD)len, &numwritten, null) != TRUE)
                 goto err2;
             if (len != numwritten)
                 goto err2;

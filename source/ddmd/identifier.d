@@ -8,9 +8,19 @@
 
 module ddmd.identifier;
 
-import core.stdc.stdio, core.stdc.string;
-import ddmd.globals, ddmd.id, ddmd.root.outbuffer, ddmd.root.rootobject, ddmd.root.stringtable, ddmd.tokens;
+import core.stdc.ctype;
+import core.stdc.stdio;
+import core.stdc.string;
+import ddmd.globals;
+import ddmd.id;
+import ddmd.root.outbuffer;
+import ddmd.root.rootobject;
+import ddmd.root.stringtable;
+import ddmd.tokens;
+import ddmd.utf;
 
+/***********************************************************
+ */
 extern (C++) final class Identifier : RootObject
 {
 public:
@@ -31,22 +41,22 @@ public:
         return new Identifier(string, value);
     }
 
-    bool equals(RootObject o)
+    override bool equals(RootObject o)
     {
         return this == o || strncmp(string, o.toChars(), len + 1) == 0;
     }
 
-    int compare(RootObject o)
+    override int compare(RootObject o)
     {
         return strncmp(string, o.toChars(), len + 1);
     }
 
-    void print()
+    override void print()
     {
         fprintf(stderr, "%s", string);
     }
 
-    char* toChars()
+    override char* toChars()
     {
         return cast(char*)string;
     }
@@ -84,7 +94,7 @@ public:
         return p;
     }
 
-    int dyncast()
+    override int dyncast()
     {
         return DYNCAST_IDENTIFIER;
     }
@@ -124,6 +134,35 @@ public:
             sv.ptrvalue = cast(char*)id;
         }
         return id;
+    }
+
+    /**********************************
+     * Determine if string is a valid Identifier.
+     * Returns:
+     *      0       invalid
+     */
+    final static bool isValidIdentifier(const(char)* p)
+    {
+        size_t len;
+        size_t idx;
+        if (!p || !*p)
+            goto Linvalid;
+        if (*p >= '0' && *p <= '9') // beware of isdigit() on signed chars
+            goto Linvalid;
+        len = strlen(p);
+        idx = 0;
+        while (p[idx])
+        {
+            dchar_t dc;
+            const(char)* q = utf_decodeChar(cast(char*)p, len, &idx, &dc);
+            if (q)
+                goto Linvalid;
+            if (!((dc >= 0x80 && isUniAlpha(dc)) || isalnum(dc) || dc == '_'))
+                goto Linvalid;
+        }
+        return true;
+    Linvalid:
+        return false;
     }
 
     static Identifier lookup(const(char)* s, size_t len)

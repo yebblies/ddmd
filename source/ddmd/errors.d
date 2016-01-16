@@ -8,26 +8,28 @@
 
 module ddmd.errors;
 
-import core.stdc.stdarg, core.stdc.stdio, core.stdc.stdlib, core.stdc.string, core.sys.posix.unistd, core.sys.windows.windows;
-import ddmd.globals, ddmd.root.outbuffer, ddmd.root.rmem;
+import core.stdc.stdarg;
+import core.stdc.stdio;
+import core.stdc.stdlib;
+import core.stdc.string;
+import core.sys.posix.unistd;
+import core.sys.windows.windows;
+import ddmd.globals;
+import ddmd.root.outbuffer;
+import ddmd.root.rmem;
 
 version (Windows) extern (C) int isatty(int);
-version (Windows) alias _isatty = isatty;
-version (Windows) int _fileno(FILE* f)
-{
-    return f._file;
-}
 
 enum COLOR : int
 {
-    COLOR_BLACK = 0,
-    COLOR_RED = 1,
-    COLOR_GREEN = 2,
-    COLOR_BLUE = 4,
-    COLOR_YELLOW = COLOR_RED | COLOR_GREEN,
-    COLOR_MAGENTA = COLOR_RED | COLOR_BLUE,
-    COLOR_CYAN = COLOR_GREEN | COLOR_BLUE,
-    COLOR_WHITE = COLOR_RED | COLOR_GREEN | COLOR_BLUE,
+    COLOR_BLACK     = 0,
+    COLOR_RED       = 1,
+    COLOR_GREEN     = 2,
+    COLOR_BLUE      = 4,
+    COLOR_YELLOW    = COLOR_RED | COLOR_GREEN,
+    COLOR_MAGENTA   = COLOR_RED | COLOR_BLUE,
+    COLOR_CYAN      = COLOR_GREEN | COLOR_BLUE,
+    COLOR_WHITE     = COLOR_RED | COLOR_GREEN | COLOR_BLUE,
 }
 
 alias COLOR_BLACK = COLOR.COLOR_BLACK;
@@ -58,9 +60,13 @@ version (Windows)
 
 extern (C++) bool isConsoleColorSupported()
 {
-    version (Windows)
+    version (CRuntime_DigitalMars)
     {
-        return _isatty(_fileno(stderr)) != 0;
+        return isatty(stderr._file) != 0;
+    }
+    else version (CRuntime_Microsoft)
+    {
+        return isatty(fileno(stderr)) != 0;
     }
     else static if (__linux__ || __APPLE__ || __FreeBSD__ || __OpenBSD__ || __sun)
     {
@@ -280,8 +286,5 @@ extern (C++) void fatal()
  */
 extern (C++) void halt()
 {
-    debug
-    {
-        *cast(char*)0 = 0;
-    }
+    assert(0);
 }

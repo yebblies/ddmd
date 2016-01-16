@@ -8,38 +8,73 @@
 
 module ddmd.lexer;
 
-import core.stdc.ctype, core.stdc.errno, core.stdc.stdarg, core.stdc.stdio, core.stdc.string, core.stdc.time;
-import ddmd.entity, ddmd.errors, ddmd.globals, ddmd.id, ddmd.identifier, ddmd.root.longdouble, ddmd.root.outbuffer, ddmd.root.port, ddmd.root.rmem, ddmd.root.stringtable, ddmd.tokens, ddmd.utf;
+import core.stdc.ctype;
+import core.stdc.errno;
+import core.stdc.stdarg;
+import core.stdc.stdio;
+import core.stdc.string;
+import core.stdc.time;
 
-enum LS = 0x2028;
-// UTF line separator
-enum PS = 0x2029;
+import ddmd.entity;
+import ddmd.errors;
+import ddmd.globals;
+import ddmd.id;
+import ddmd.identifier;
+import ddmd.root.longdouble;
+import ddmd.root.outbuffer;
+import ddmd.root.port;
+import ddmd.root.rmem;
+import ddmd.root.stringtable;
+import ddmd.tokens;
+import ddmd.utf;
+
+enum LS = 0x2028;       // UTF line separator
+enum PS = 0x2029;       // UTF paragraph separator
+
 /********************************************
  * Do our own char maps
  */
-extern (C++) __gshared ubyte[256] cmtable;
-extern (C++) __gshared const(int) CMoctal = 0x1;
-extern (C++) __gshared const(int) CMhex = 0x2;
-extern (C++) __gshared const(int) CMidchar = 0x4;
+immutable ubyte[256] cmtable;
+enum CMoctal  = 0x1;
+enum CMhex    = 0x2;
+enum CMidchar = 0x4;
+enum CMzerosecond = 0x8;
+enum CMdigitsecond = 0x10;
+enum CMsinglechar = 0x20;
 
-extern (C++) bool isoctal(char c)
+bool isoctal(char c)
 {
     return (cmtable[c] & CMoctal) != 0;
 }
 
-extern (C++) bool ishex(char c)
+bool ishex(char c)
 {
     return (cmtable[c] & CMhex) != 0;
 }
 
-extern (C++) bool isidchar(char c)
+bool isidchar(char c)
 {
     return (cmtable[c] & CMidchar) != 0;
 }
 
-extern (C++) static void cmtable_init()
+bool isZeroSecond(char c)
 {
-    for (uint c = 0; c < 256; c++)
+    return (cmtable[c] & CMzerosecond) != 0;
+}
+
+bool isDigitSecond(char c)
+{
+    return (cmtable[c] & CMdigitsecond) != 0;
+}
+
+bool issinglechar(char c)
+{
+    return (cmtable[c] & CMsinglechar) != 0;
+}
+
+static this()
+{
+    foreach (const c; 0 .. cmtable.length)
     {
         if ('0' <= c && c <= '7')
             cmtable[c] |= CMoctal;
@@ -47,59 +82,105 @@ extern (C++) static void cmtable_init()
             cmtable[c] |= CMhex;
         if (isalnum(c) || c == '_')
             cmtable[c] |= CMidchar;
+
+        switch (c)
+        {
+            case 'x': case 'X':
+            case 'b': case 'B':
+                cmtable[c] |= CMzerosecond;
+                break;
+
+            case '0': .. case '9':
+            case 'e': case 'E':
+            case 'f': case 'F':
+            case 'l': case 'L':
+            case 'p': case 'P':
+            case 'u': case 'U':
+            case 'i':
+            case '.':
+            case '_':
+                cmtable[c] |= CMzerosecond | CMdigitsecond;
+                break;
+
+            default:
+                break;
+        }
+
+        switch (c)
+        {
+            case '\\':
+            case '\n':
+            case '\r':
+            case 0:
+            case 0x1A:
+            case '\'':
+                break;
+            default:
+                if (!(c & 0x80))
+                    cmtable[c] |= CMsinglechar;
+                break;
+        }
     }
 }
 
-version (unittest)
+unittest
 {
-    extern (C++) void unittest_lexer()
-    {
-        //printf("unittest_lexer()\n");
-        /* Not much here, just trying things out.
-         */
-        const(char)* text = "int";
-        scope Lexer lex1 = new Lexer(null, cast(char*)text, 0, text.sizeof, 0, 0);
-        TOK tok;
-        tok = lex1.nextToken();
-        //printf("tok == %s, %d, %d\n", Token::toChars(tok), tok, TOKint32);
-        assert(tok == TOKint32);
-        tok = lex1.nextToken();
-        assert(tok == TOKeof);
-        tok = lex1.nextToken();
-        assert(tok == TOKeof);
-    }
+    //printf("lexer.unittest\n");
+    /* Not much here, just trying things out.
+     */
+    string text = "int";
+    scope Lexer lex1 = new Lexer(null, text.ptr, 0, text.length, 0, 0);
+    TOK tok;
+    tok = lex1.nextToken();
+    //printf("tok == %s, %d, %d\n", Token::toChars(tok), tok, TOKint32);
+    assert(tok == TOKint32);
+    tok = lex1.nextToken();
+    assert(tok == TOKeof);
+    tok = lex1.nextToken();
+    assert(tok == TOKeof);
 }
 
-extern (C++) class Lexer
+/***********************************************************
+ */
+class Lexer
 {
 public:
-    /*************************** Lexer ********************************************/
-    extern (C++) static __gshared OutBuffer stringbuffer;
-    Loc scanloc; // for error messages
-    const(char)* base; // pointer to start of buffer
-    const(char)* end; // past end of buffer
-    const(char)* p; // current character
-    const(char)* line; // start of current line
-    Token token;
-    int doDocComment; // collect doc comment information
-    int anyToken; // !=0 means seen at least one token
-    int commentToken; // !=0 means comments are TOKcomment's
-    bool errors; // errors occurred during lexing or parsing
+    __gshared OutBuffer stringbuffer;
 
-    final extern (D) this(const(char)* filename, const(char)* base, size_t begoffset, size_t endoffset, int doDocComment, int commentToken)
+    Loc scanloc;            // for error messages
+
+    const(char)* base;      // pointer to start of buffer
+    const(char)* end;       // past end of buffer
+    const(char)* p;         // current character
+    const(char)* line;      // start of current line
+    Token token;
+    bool doDocComment;      // collect doc comment information
+    bool anyToken;          // seen at least one token
+    bool commentToken;      // comments are TOKcomment's
+    bool errors;            // errors occurred during lexing or parsing
+
+    /*********************
+     * Creates a Lexer.
+     * Params:
+     *  filename = used for error messages
+     *  base = source code, ending in a 0 byte
+     *  begoffset = starting offset into base[]
+     *  endoffset = last offset into base[]
+     *  doDocComment = handle documentation comments
+     *  commentToken = comments become TOKcomment's
+     */
+    this(const(char)* filename, const(char)* base, size_t begoffset, size_t endoffset, bool doDocComment, bool commentToken)
     {
         scanloc = Loc(filename, 1, 1);
         //printf("Lexer::Lexer(%p,%d)\n",base,length);
         //printf("lexer.filename = %s\n", filename);
-        memset(&token, 0, token.sizeof);
+        token = Token.init;
         this.base = base;
         this.end = base + endoffset;
         p = base + begoffset;
         line = p;
         this.doDocComment = doDocComment;
-        this.anyToken = 0;
         this.commentToken = commentToken;
-        this.errors = false;
         //initKeywords();
         /* If first line starts with '#!', ignore the line
          */
@@ -135,17 +216,6 @@ public:
                 break;
             }
             endOfLine();
-        }
-    }
-
-    final static void initLexer()
-    {
-        cmtable_init();
-        Identifier.initTable();
-        Token.initTokens();
-        version (unittest)
-        {
-            unittest_lexer();
         }
     }
 
@@ -221,19 +291,36 @@ public:
                 continue;
                 // skip white space
             case '0':
-            case '1':
-            case '2':
-            case '3':
-            case '4':
-            case '5':
-            case '6':
-            case '7':
-            case '8':
-            case '9':
+                if (!isZeroSecond(p[1]))        // if numeric literal does not continue
+                {
+                    ++p;
+                    t.uns64value = 0;
+                    t.value = TOKint32v;
+                    return;
+                }
+                goto Lnumber;
+
+            case '1': .. case '9':
+                if (!isDigitSecond(p[1]))       // if numeric literal does not continue
+                {
+                    t.uns64value = *p - '0';
+                    ++p;
+                    t.value = TOKint32v;
+                    return;
+                }
+            Lnumber:
                 t.value = number(t);
                 return;
+
             case '\'':
-                t.value = charConstant(t, 0);
+                if (issinglechar(p[1]) && p[2] == '\'')
+                {
+                    t.uns64value = p[1];        // simple one character literal
+                    t.value = TOKcharv;
+                    p += 3;
+                }
+                else
+                    t.value = charConstant(t);
                 return;
             case 'r':
                 if (p[1] != '"')
@@ -343,10 +430,10 @@ public:
                     anyToken = 1;
                     if (*t.ptr == '_') // if special identifier token
                     {
-                        static __gshared bool initdone = false;
-                        static __gshared char[11 + 1] date;
-                        static __gshared char[8 + 1] time;
-                        static __gshared char[24 + 1] timestamp;
+                        __gshared bool initdone = false;
+                        __gshared char[11 + 1] date;
+                        __gshared char[8 + 1] time;
+                        __gshared char[24 + 1] timestamp;
                         if (!initdone) // lazy evaluation
                         {
                             initdone = true;
@@ -1424,7 +1511,7 @@ public:
                 if (startline && isalpha(c) && hereid)
                 {
                     Token tok;
-                    const(char)* psave = p;
+                    auto psave = p;
                     p--;
                     scan(&tok); // read in possible heredoc identifier
                     //printf("endid = '%s'\n", tok.ident->toChars());
@@ -1574,7 +1661,7 @@ public:
 
     /**************************************
      */
-    final TOK charConstant(Token* t, int wide)
+    final TOK charConstant(Token* t)
     {
         uint c;
         TOK tk = TOKcharv;
@@ -1815,16 +1902,14 @@ public:
             default:
                 goto Ldone;
             }
-            uinteger_t n2 = n * base;
-            if ((n2 / base != n || n2 + d < n))
+            // Avoid expensive overflow check if we aren't at risk of overflow
+            if (n <= 0x0FFF_FFFF_FFFF_FFFFUL)
+                n = n * base + d;
+            else
             {
-                overflow = true;
-            }
-            n = n2 + d;
-            // if n needs more than 64 bits
-            if (n.sizeof > 8 && n > 0xFFFFFFFFFFFFFFFFUL)
-            {
-                overflow = true;
+                import core.checkedint;
+                n = mulu(n, base, overflow);
+                n = addu(n, d, overflow);
             }
         }
     Ldone:
@@ -1845,7 +1930,7 @@ public:
         alias FLAGS_decimal = FLAGS.FLAGS_decimal;
         alias FLAGS_unsigned = FLAGS.FLAGS_unsigned;
         alias FLAGS_long = FLAGS.FLAGS_long;
-        ;
+
         FLAGS flags = (base == 10) ? FLAGS_decimal : FLAGS_none;
         // Parse trailing 'u', 'U', 'l' or 'L' in any combination
         const(char)* psuffix = p;
@@ -2418,36 +2503,6 @@ public:
             *dc = combineComments(*dc, cast(char*)buf.data);
         else
             *dc = cast(char*)buf.extractData();
-    }
-
-    /**********************************
-     * Determine if string is a valid Identifier.
-     * Placed here because of commonality with Lexer functionality.
-     * Returns:
-     *      0       invalid
-     */
-    final static bool isValidIdentifier(const(char)* p)
-    {
-        size_t len;
-        size_t idx;
-        if (!p || !*p)
-            goto Linvalid;
-        if (*p >= '0' && *p <= '9') // beware of isdigit() on signed chars
-            goto Linvalid;
-        len = strlen(p);
-        idx = 0;
-        while (p[idx])
-        {
-            dchar_t dc;
-            const(char)* q = utf_decodeChar(cast(char*)p, len, &idx, &dc);
-            if (q)
-                goto Linvalid;
-            if (!((dc >= 0x80 && isUniAlpha(dc)) || isalnum(dc) || dc == '_'))
-                goto Linvalid;
-        }
-        return true;
-    Linvalid:
-        return false;
     }
 
     /********************************************
