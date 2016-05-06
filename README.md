@@ -21,12 +21,8 @@ Example:
 {
     "name": "ddmdlexertest",
     "dependencies": {
-        "ddmd": ">=0.0.1"
-    },
-    "buildRequirements": [
-        "silenceWarnings",
-        "silenceDeprecations"
-    ]
+        "ddmd": ">=0.0.7"
+    }
 }
 ```
 
@@ -41,8 +37,6 @@ import ddmd.lexer;
 
 void main()
 {
-    Lexer.initLexer();
-
     string data = "void blah() {} // stuff";
     auto l = new Lexer("myfile", data.ptr, 0, data.length, 0, 0);
     l.nextToken();

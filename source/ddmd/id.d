@@ -66,6 +66,7 @@ struct Id
     extern (C++) static __gshared Identifier __c_long;
     extern (C++) static __gshared Identifier __c_ulong;
     extern (C++) static __gshared Identifier __c_long_double;
+    extern (C++) static __gshared Identifier cpp_type_info_ptr;
     extern (C++) static __gshared Identifier TypeInfo;
     extern (C++) static __gshared Identifier TypeInfo_Class;
     extern (C++) static __gshared Identifier TypeInfo_Interface;
@@ -375,6 +376,7 @@ struct Id
         __c_long = Identifier.idPool("__c_long");
         __c_ulong = Identifier.idPool("__c_ulong");
         __c_long_double = Identifier.idPool("__c_long_double");
+        cpp_type_info_ptr = Identifier.idPool("__cpp_type_info_ptr");
         TypeInfo = Identifier.idPool("TypeInfo");
         TypeInfo_Class = Identifier.idPool("TypeInfo_Class");
         TypeInfo_Interface = Identifier.idPool("TypeInfo_Interface");
